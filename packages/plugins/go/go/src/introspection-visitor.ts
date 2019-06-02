@@ -20,20 +20,20 @@ export class GoIntrospectionVisitor extends GoVisitor {
   ObjectTypeDefinition(node: ObjectTypeDefinitionNode, key: string | number, parent: any) {
     const name: string = node.name as any;
 
-    if (this.typesToInclude.some(type => type.name === name)) {
-      return super.ObjectTypeDefinition(node, key, parent);
-    }
+    // if (this.typesToInclude.some(type => type.name === name)) {
+    //   return super.ObjectTypeDefinition(node, key, parent);
+    // }
 
-    return null;
+    return 'object type definition';
   }
 
-  EnumTypeDefinition(node: EnumTypeDefinitionNode): string {
-    const name: string = node.name as any;
-
-    if (this.typesToInclude.some(type => type.name === name)) {
-      return super.EnumTypeDefinition(node);
-    }
-
-    return null;
-  }
+  // EnumTypeDefinition(node: EnumTypeDefinitionNode): string {
+  //   const name: string = node.name as any;
+  //
+  //   if (this.typesToInclude.some(type => type.name === name)) {
+  //     return super.EnumTypeDefinition(node);
+  //   }
+  //
+  //   return null;
+  // }
 }

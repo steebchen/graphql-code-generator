@@ -72,7 +72,6 @@ export const plugin: PluginFunction<GoPluginConfig> = (schema: GraphQLSchema, do
   const scalars = visitor.scalarsDefinition;
 
   return {
-    prepend: [...visitor.getEnumsImports()],
     content: [scalars, ...visitorResult.definitions, ...introspectionDefinitions].join('\n'),
   };
 };

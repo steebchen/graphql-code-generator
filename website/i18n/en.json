@@ -125,6 +125,9 @@
       "plugins/add": {
         "title": "Add"
       },
+      "plugins/client-note": {
+        "title": "plugins/client-note"
+      },
       "plugins/flow-operations": {
         "title": "Flow Operations"
       },

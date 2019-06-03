@@ -1,17 +1,5 @@
-import {
-  transformComment,
-  wrapWithSingleQuotes,
-  indent,
-  BaseTypesVisitor,
-  ParsedTypesConfig,
-  toPascalCase,
-  BaseVisitor, getBaseType, getBaseTypeNode,
-} from '@graphql-codegen/visitor-plugin-common';
-import {
-  DeclarationBlockConfig,
-  OperationVariablesToObject,
-  parseMapper,
-} from '@graphql-codegen/visitor-plugin-common';
+import { transformComment, wrapWithSingleQuotes, indent, BaseTypesVisitor, ParsedTypesConfig, toPascalCase, BaseVisitor, getBaseType, getBaseTypeNode } from '@graphql-codegen/visitor-plugin-common';
+import { DeclarationBlockConfig, OperationVariablesToObject, parseMapper } from '@graphql-codegen/visitor-plugin-common';
 import { GoPluginConfig } from './index';
 import * as autoBind from 'auto-bind';
 import {
@@ -131,23 +119,39 @@ export class DeclarationBlock {
     }
 
     if (this._implements) {
-      result += '\n' + this._implements.map(i => {
-        return `func (*${this._name}) Is${i}() {}`;
-      }).join('\n');
+      result +=
+        '\n' +
+        this._implements
+          .map(i => {
+            return `func (*${this._name}) Is${i}() {}`;
+          })
+          .join('\n');
     }
 
     return (this._comment ? this._comment : '') + result + '\n';
   }
 }
 
+const SCALARS_MAP = {
+  ID: 'string',
+  String: 'string',
+  Boolean: 'bool',
+  Int: 'int',
+  Float: 'float64',
+};
+
 export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TParsedConfig extends GoPluginParsedConfig = GoPluginParsedConfig> extends BaseVisitor<TRawConfig, TParsedConfig> {
   constructor(protected _schema: GraphQLSchema, pluginConfig: TRawConfig, additionalConfig: Partial<TParsedConfig> = {}) {
-    super(pluginConfig, {
-      avoidOptionals: pluginConfig.avoidOptionals || false,
-      constEnums: pluginConfig.constEnums || false,
-      enumsAsTypes: pluginConfig.enumsAsTypes || false,
-      ...(additionalConfig || {}),
-    } as TParsedConfig);
+    super(
+      pluginConfig,
+      {
+        avoidOptionals: pluginConfig.avoidOptionals || false,
+        constEnums: pluginConfig.constEnums || false,
+        enumsAsTypes: pluginConfig.enumsAsTypes || false,
+        ...(additionalConfig || {}),
+      } as TParsedConfig,
+      SCALARS_MAP
+    );
 
     autoBind(this);
   }
@@ -158,11 +162,11 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
       const scalarType = this._schema.getType(scalarName);
       const comment = scalarType && scalarType.astNode && scalarType.description ? transformComment(scalarType.description, 1) : '';
 
-      return comment + indent(`type ${scalarName} ${scalarValue}`);
+      return `${comment}\ntype ${scalarName} ${scalarValue}`;
     });
 
     // TODO move somewhere else
-    return 'package main\n\n' + allScalars.join('\n');
+    return 'package main\n\n' + allScalars.join('\n') + '\n\n';
   }
 
   NonNullType(node: NonNullTypeNode): string {

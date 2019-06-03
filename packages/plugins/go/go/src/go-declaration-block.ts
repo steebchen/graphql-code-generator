@@ -1,33 +1,32 @@
 import { DeclarationBlockConfig, transformComment } from '@graphql-codegen/visitor-plugin-common';
 import { NameNode, StringValueNode } from 'graphql';
 
-export class DeclarationBlock {
-  _name = null;
-  _kind = null;
-  _methodName = null;
-  _content = null;
-  _block = null;
-  _nameGenerics = null;
-  _comment = null;
-  _ignoreBlockWrapper = false;
-  _implements = null;
+export class GoDeclarationBlock {
+  private _name = null;
+  private _kind = null;
+  private _methodName = null;
+  private _content = null;
+  private _block = null;
+  private _nameGenerics = null;
+  private _comment = null;
+  private _ignoreBlockWrapper = false;
+  private _implements = null;
 
   constructor(private _config: DeclarationBlockConfig) {
     this._config = {
       blockWrapper: '',
       blockTransformer: block => block,
-      enumNameValueSeparator: ':',
       ...this._config,
     };
   }
 
-  asKind(kind: 'struct' | 'enum'): DeclarationBlock {
+  asKind(kind: 'struct' | 'enum'): GoDeclarationBlock {
     this._kind = kind;
 
     return this;
   }
 
-  withComment(comment: string | StringValueNode | null): DeclarationBlock {
+  withComment(comment: string | StringValueNode | null): GoDeclarationBlock {
     if (comment) {
       this._comment = transformComment(comment, 0);
     }
@@ -35,32 +34,32 @@ export class DeclarationBlock {
     return this;
   }
 
-  withMethodCall(methodName: string, ignoreBlockWrapper = false): DeclarationBlock {
+  withMethodCall(methodName: string, ignoreBlockWrapper = false): GoDeclarationBlock {
     this._methodName = methodName;
     this._ignoreBlockWrapper = ignoreBlockWrapper;
 
     return this;
   }
 
-  withBlock(block: string): DeclarationBlock {
+  withBlock(block: string): GoDeclarationBlock {
     this._block = block;
 
     return this;
   }
 
-  withContent(content: string): DeclarationBlock {
+  withContent(content: string): GoDeclarationBlock {
     this._content = content;
 
     return this;
   }
 
-  withName(name: string | NameNode): DeclarationBlock {
+  withName(name: string | NameNode): GoDeclarationBlock {
     this._name = name;
 
     return this;
   }
 
-  implements(interfaces: string[]): DeclarationBlock {
+  implements(interfaces: string[]): GoDeclarationBlock {
     this._implements = interfaces;
 
     return this;
@@ -69,7 +68,11 @@ export class DeclarationBlock {
   public get string(): string {
     let result = '';
 
-    result += `type ${this._name} ${this._kind} `;
+    result += `type ${this._name} `;
+
+    if (this._kind) {
+      result += `${this._kind} `;
+    }
 
     if (this._block) {
       if (this._content) {

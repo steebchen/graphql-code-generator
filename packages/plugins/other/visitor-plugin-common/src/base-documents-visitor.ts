@@ -7,7 +7,7 @@ import { SelectionSetToObject } from './selection-set-to-object';
 import { OperationVariablesToObject } from './variables-to-object';
 import { RawConfig, ParsedConfig, BaseVisitor, BaseVisitorConvertOptions } from './base-visitor';
 
-function getRootType(operation: OperationTypeNode, schema: GraphQLSchema) {
+export function getRootType(operation: OperationTypeNode, schema: GraphQLSchema) {
   switch (operation) {
     case 'query':
       return schema.getQueryType();
@@ -68,7 +68,7 @@ export class BaseDocumentsVisitor<TRawConfig extends RawDocumentsConfig = RawDoc
     return this._parsedConfig.addTypename;
   }
 
-  private handleAnonymouseOperation(node: OperationDefinitionNode): string {
+  protected handleAnonymousOperation(node: OperationDefinitionNode): string {
     const name = node.name && node.name.value;
 
     if (name) {
@@ -101,7 +101,7 @@ export class BaseDocumentsVisitor<TRawConfig extends RawDocumentsConfig = RawDoc
   }
 
   OperationDefinition(node: OperationDefinitionNode): string {
-    const name = this.handleAnonymouseOperation(node);
+    const name = this.handleAnonymousOperation(node);
     const operationRootType = getRootType(node.operation, this._schema);
 
     if (!operationRootType) {

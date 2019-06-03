@@ -18,7 +18,7 @@ import {
   StringValueNode,
   UnionTypeDefinitionNode,
 } from 'graphql';
-import { DeclarationBlock, GoPluginConfig } from './index';
+import { GoDeclarationBlock, GoPluginConfig } from './index';
 
 export interface GoPluginParsedConfig extends ParsedTypesConfig {
   package: string;
@@ -90,7 +90,7 @@ ${imports}
   }
 
   InputObjectTypeDefinition(node: InputObjectTypeDefinitionNode): string {
-    return new DeclarationBlock(this._declarationBlockConfig)
+    return new GoDeclarationBlock(this._declarationBlockConfig)
       .asKind('struct')
       .withName(this.convertName(node))
       .withComment((node.description as any) as string)
@@ -120,7 +120,7 @@ ${imports}
     const originalNode = parent[key] as UnionTypeDefinitionNode;
     const possibleTypes = originalNode.types.map(t => (this.scalars[t.name.value] ? t.name.value : this.convertName(t))).join(' | ');
 
-    return new DeclarationBlock(this._declarationBlockConfig)
+    return new GoDeclarationBlock(this._declarationBlockConfig)
       .asKind('struct')
       .withName(this.convertName(node))
       .withComment((node.description as any) as string)
@@ -134,10 +134,9 @@ ${imports}
     const allFields = node.fields;
     const interfaces = originalNode.interfaces.map(i => this.convertName(i));
 
-    let declarationBlock = new DeclarationBlock(this._declarationBlockConfig)
+    let declarationBlock = new GoDeclarationBlock(this._declarationBlockConfig)
       .asKind('struct')
       .withName(this.convertName(node))
-      // .withContent(interfaces)
       .implements(interfaces)
       .withComment((node.description as any) as string);
 
@@ -149,7 +148,7 @@ ${imports}
     // const allFields = [...(this.config.addTypename ? [indent(`__typename "${optionalTypename}${node.name}",`)] : []), ...node.fields];
     const allFields = node.fields;
 
-    let declarationBlock = new DeclarationBlock(this._declarationBlockConfig)
+    let declarationBlock = new GoDeclarationBlock(this._declarationBlockConfig)
       .asKind('struct')
       .withName(this.convertName(node))
       .withComment((node.description as any) as string);

@@ -5,7 +5,8 @@ import { dirname, normalize } from 'path';
 import { GoVisitor } from './visitor';
 
 export * from './visitor';
-export * from './declarationBlock';
+export * from './go-declaration-block';
+export * from './go-variables-to-object';
 
 export interface GoPluginConfig extends RawConfig {
   /**

@@ -21,8 +21,13 @@ import { ScalarsMap, ConvertNameFn, LoadedFragment } from './types';
 import { GraphQLObjectType, GraphQLNonNull, GraphQLList } from 'graphql';
 import { BaseVisitorConvertOptions } from './base-visitor';
 
-export type PrimitiveField = string;
-export type PrimitiveAliasedFields = { alias: string; fieldName: string };
+export type PrimitiveField = {
+  name: string;
+  type: string;
+};
+export type PrimitiveAliasedFields = PrimitiveField & {
+  alias: string;
+};
 export type LinkField = { alias: string; name: string; type: string; selectionSet: string };
 export type FragmentsMap = { [onType: string]: string[] };
 
@@ -90,11 +95,15 @@ export class SelectionSetToObject {
       if (this._scalars[typeName] || isEnumType(baseType) || isScalarType(baseType)) {
         if (field.alias && field.alias.value) {
           this._primitiveAliasedFields.push({
-            fieldName: field.name.value,
+            name: field.name.value,
             alias: field.alias.value,
+            type: baseType.name,
           });
         } else {
-          this._primitiveFields.push(field.name.value);
+          this._primitiveFields.push({
+            name: field.name.value,
+            type: baseType.name,
+          });
         }
       } else {
         const selectionSetToObject = this.createNext(baseType, field.selectionSet);
@@ -229,7 +238,7 @@ export class SelectionSetToObject {
       return null;
     }
 
-    return `{ ${fields.map(aliasedField => `${this.formatNamedField(aliasedField.alias)}: ${parentName}['${aliasedField.fieldName}']`).join(', ')} }`;
+    return `{ ${fields.map(aliasedField => `${this.formatNamedField(aliasedField.alias)}: ${parentName}['${aliasedField.name}']`).join(', ')} }`;
   }
 
   protected formatNamedField(name: string): string {

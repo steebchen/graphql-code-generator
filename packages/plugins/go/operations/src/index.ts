@@ -6,28 +6,7 @@ import { RawDocumentsConfig, LoadedFragment } from '@graphql-codegen/visitor-plu
 export * from './go-operation-variables-to-object';
 export * from './go-selection-set-to-object';
 
-export interface GoDocumentsPluginConfig extends RawDocumentsConfig {
-  /**
-   * @name avoidOptionals
-   * @type boolean
-   * @description This will cause the generator to avoid using Go optionals (`?`),
-   * so the following definition: `type A { myField: String }` will output `myField: Maybe<string>`
-   * instead of `myField?: Maybe<string>`.
-   * @default false
-   *
-   * @example
-   * ```yml
-   * generates:
-   * path/to/file.ts:
-   *  plugins:
-   *    - go
-   *    - go-operations
-   *  config:
-   *    avoidOptionals: true
-   * ```
-   */
-  avoidOptionals?: boolean;
-}
+export interface GoDocumentsPluginConfig extends RawDocumentsConfig {}
 
 export const plugin: PluginFunction<GoDocumentsPluginConfig> = (schema: GraphQLSchema, documents: Types.DocumentFile[], config: GoDocumentsPluginConfig) => {
   const allAst = concatAST(

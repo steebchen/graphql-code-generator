@@ -1,26 +1,25 @@
 import { GoDeclarationBlock } from '@graphql-codegen/go';
+import { GO_SCALARS } from '@graphql-codegen/go';
 import { getRootType, toPascalCase } from '@graphql-codegen/visitor-plugin-common';
 import { FragmentDefinitionNode, GraphQLObjectType, GraphQLSchema, OperationDefinitionNode, VariableDefinitionNode } from 'graphql';
 import { ParsedDocumentsConfig, BaseDocumentsVisitor, LoadedFragment } from '@graphql-codegen/visitor-plugin-common';
 import { GoDocumentsPluginConfig, GoOperationVariablesToObject, GoSelectionSetToObject } from './index';
 
-export interface GoDocumentsParsedConfig extends ParsedDocumentsConfig {
-  avoidOptionals: boolean;
-}
+export interface GoDocumentsParsedConfig extends ParsedDocumentsConfig {}
 
 export class GoDocumentsVisitor extends BaseDocumentsVisitor<GoDocumentsPluginConfig, GoDocumentsParsedConfig> {
   constructor(schema: GraphQLSchema, config: GoDocumentsPluginConfig, allFragments: LoadedFragment[]) {
     super(
       config,
       {
-        avoidOptionals: config.avoidOptionals || false,
         nonOptionalTypename: config.nonOptionalTypename || false,
       } as GoDocumentsParsedConfig,
-      schema
+      schema,
+      GO_SCALARS
     );
 
     this.setSelectionSetHandler(new GoSelectionSetToObject(this.scalars, this.schema, this.convertName, this.config.addTypename, this.config.nonOptionalTypename, allFragments, this.config));
-    this.setVariablesTransformer(new GoOperationVariablesToObject(this.scalars, this.convertName, this.config.avoidOptionals, this.config.namespacedImportName));
+    this.setVariablesTransformer(new GoOperationVariablesToObject(this.scalars, this.convertName, false, this.config.namespacedImportName));
   }
 
   FragmentDefinition(node: FragmentDefinitionNode): string {

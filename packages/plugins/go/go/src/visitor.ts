@@ -18,21 +18,13 @@ import {
   StringValueNode,
   UnionTypeDefinitionNode,
 } from 'graphql';
-import { GoDeclarationBlock, GoPluginConfig } from './index';
+import { GO_SCALARS, GoDeclarationBlock, GoPluginConfig } from './index';
 
 export interface GoPluginParsedConfig extends ParsedTypesConfig {
   package: string;
   imports: string[];
   scalars: { [key: string]: string };
 }
-
-const SCALARS_MAP = {
-  ID: 'string',
-  String: 'string',
-  Boolean: 'bool',
-  Int: 'int',
-  Float: 'float64',
-};
 
 export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TParsedConfig extends GoPluginParsedConfig = GoPluginParsedConfig> extends BaseVisitor<TRawConfig, TParsedConfig> {
   constructor(protected _schema: GraphQLSchema, defaultPackageName: string, pluginConfig: TRawConfig, additionalConfig: Partial<TParsedConfig> = {}) {
@@ -44,7 +36,7 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
         // scalars are not added here because it is handled by pluginConfig / BaseVisitor
         ...(additionalConfig || {}),
       } as TParsedConfig,
-      SCALARS_MAP
+      GO_SCALARS
     );
 
     autoBind(this);
@@ -71,16 +63,12 @@ ${imports}
     return `package ${pkg}\n\n`;
   }
 
-  public get scalarsDefinition(): string {
-    const allScalars = Object.keys(this.config.scalars).map(scalarName => {
-      const scalarValue = this.config.scalars[scalarName];
-      const scalarType = this._schema.getType(scalarName);
-      const comment = scalarType && scalarType.astNode && scalarType.description ? transformComment(scalarType.description, 1) + '\n' : '';
+  protected getScalar(name: string): string {
+    if (this.scalars[name]) {
+      return this.scalars[name];
+    }
 
-      return comment + `type ${scalarName} ${scalarValue}`;
-    });
-
-    return allScalars.join('\n') + '\n\n';
+    return name;
   }
 
   NonNullType(node: NonNullTypeNode): string {
@@ -101,7 +89,7 @@ ${imports}
     const comment = transformComment((node.description as any) as string, 1);
 
     // TODO to go case
-    return comment + indent(`${toPascalCase(node.name.toString())} ${node.type} \`json:"${node.name}"\``);
+    return comment + indent(`${toPascalCase(node.name.toString())} ${this.getScalar(node.type.toString())} \`json:"${node.name}"\``);
   }
 
   Name(node: NameNode): string {
@@ -109,11 +97,10 @@ ${imports}
   }
 
   FieldDefinition(node: FieldDefinitionNode): string {
-    const typeString = (node.type as any) as string;
     const comment = transformComment((node.description as any) as string, 1);
 
     // TODO to go case
-    return comment + indent(`${toPascalCase(node.name.toString())} ${typeString} \`json:"${node.name}"\``);
+    return comment + indent(`${toPascalCase(node.name.toString())} ${this.getScalar(node.type.toString())} \`json:"${node.name}"\``);
   }
 
   UnionTypeDefinition(node: UnionTypeDefinitionNode, key: string | number, parent: any): string {

@@ -1,5 +1,6 @@
 import { toPascalCase } from '@graphql-codegen/plugin-helpers';
 import { ConvertNameFn, indent, InterfaceOrVariable, OperationVariablesToObject, ScalarsMap } from '@graphql-codegen/visitor-plugin-common';
+import { getBaseTypeNode } from '@graphql-codegen/visitor-plugin-common';
 import { Kind, TypeNode } from 'graphql';
 
 export class GoOperationVariablesToObject extends OperationVariablesToObject {
@@ -36,8 +37,30 @@ export class GoOperationVariablesToObject extends OperationVariablesToObject {
   }
 
   protected transformVariable<TDefinitionType extends InterfaceOrVariable>(variable: TDefinitionType): string {
-    const [field, name] = super.transformVariable(variable).split(':');
+    let typeValue = null;
+    const prefix = this._namespacedImportName ? `${this._namespacedImportName}.` : '';
 
-    return `${toPascalCase(field)} ${name}`;
+    if (typeof variable.type === 'string') {
+      typeValue = variable.type;
+    } else {
+      const baseType = getBaseTypeNode(variable.type);
+      const typeName = baseType.name.value;
+      typeValue = this._scalars[typeName]
+        ? this.getScalar(typeName)
+        : `${prefix}${this._convertName(baseType, {
+            useTypesPrefix: true,
+          })}`;
+    }
+
+    const fieldName = this.getName(variable);
+    const fieldType = this.wrapAstTypeWithModifiers(typeValue, variable.type);
+
+    const hasDefaultValue = variable.defaultValue != null && typeof variable.defaultValue !== 'undefined';
+    const isNonNullType = variable.type.kind === Kind.NON_NULL_TYPE;
+
+    const formattedFieldString = this.formatFieldString(fieldName, isNonNullType, hasDefaultValue);
+    const formattedTypeString = this.formatTypeString(fieldType, isNonNullType, hasDefaultValue);
+
+    return `${toPascalCase(formattedFieldString)} ${formattedTypeString}`;
   }
 }

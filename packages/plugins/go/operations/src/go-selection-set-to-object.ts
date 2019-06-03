@@ -96,6 +96,14 @@ export class GoSelectionSetToObject extends SelectionSetToObject {
     return `struct {\n${fields}\n}`;
   }
 
+  protected getScalar(name: string): string {
+    if (this._scalars[name]) {
+      return this._scalars[name];
+    }
+
+    return name;
+  }
+
   protected buildTypeNameField(): string | null {
     const possibleTypes = [];
 
@@ -121,7 +129,7 @@ export class GoSelectionSetToObject extends SelectionSetToObject {
       return null;
     }
 
-    return fields.map(field => indent(`${toPascalCase(field.name)} ${field.type} \`json:"${field.name}"\``)).join('\n');
+    return fields.map(field => indent(`${toPascalCase(field.name)} ${this.getScalar(field.type)} \`json:"${field.name}"\``)).join('\n');
   }
 
   protected buildAliasedPrimitiveFields(parentName: string, fields: PrimitiveAliasedFields[]): string | null {
@@ -129,7 +137,7 @@ export class GoSelectionSetToObject extends SelectionSetToObject {
       return null;
     }
 
-    return fields.map(aliasedField => indent(`${toPascalCase(aliasedField.alias)} ${aliasedField.type} \`json:"${aliasedField.alias}" originalField:"${aliasedField.name}"\``)).join('\n');
+    return fields.map(aliasedField => indent(`${toPascalCase(aliasedField.alias)} ${this.getScalar(aliasedField.type)} \`json:"${aliasedField.alias}" originalField:"${aliasedField.name}"\``)).join('\n');
   }
 
   protected buildLinkFields(fields: LinkField[]): string | null {

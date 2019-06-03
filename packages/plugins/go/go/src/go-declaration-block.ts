@@ -79,10 +79,7 @@ export class GoDeclarationBlock {
         result += this._content;
       }
 
-      const blockWrapper = this._ignoreBlockWrapper ? '' : this._config.blockWrapper;
-      const before = '{' + blockWrapper;
-      const after = blockWrapper + '}';
-      const block = [before, this._block, after].filter(val => !!val).join('\n');
+      const block = `{\n${this._block}\n}`;
 
       if (this._methodName) {
         result += `${this._methodName}(${this._config.blockTransformer!(block)})`;

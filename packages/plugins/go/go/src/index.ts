@@ -5,6 +5,7 @@ import { dirname, normalize } from 'path';
 import { GoVisitor } from './visitor';
 
 export * from './visitor';
+export * from './scalars';
 export * from './go-declaration-block';
 export * from './go-variables-to-object';
 
@@ -72,9 +73,8 @@ export const plugin: PluginFunction<GoPluginConfig> = (schema: GraphQLSchema, do
   const visitorResult = visit(astNode, { leave: visitor });
   const pkg = visitor.packageDefinition;
   const imports = visitor.importDefinition;
-  const scalars = visitor.scalarsDefinition;
 
   return {
-    content: [pkg, imports, scalars, ...visitorResult.definitions].join('\n'),
+    content: [pkg, imports, ...visitorResult.definitions].join('\n'),
   };
 };

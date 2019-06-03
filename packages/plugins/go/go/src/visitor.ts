@@ -22,6 +22,8 @@ import { DeclarationBlock, GoPluginConfig } from './index';
 
 export interface GoPluginParsedConfig extends ParsedTypesConfig {
   package: string;
+  imports: string[];
+  scalars: { [key: string]: string };
 }
 
 const SCALARS_MAP = {
@@ -38,12 +40,25 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
       pluginConfig,
       {
         package: pluginConfig.package || defaultPackageName,
+        imports: pluginConfig.imports || [],
+        // scalars are not added here because it is handled by pluginConfig / BaseVisitor
         ...(additionalConfig || {}),
       } as TParsedConfig,
       SCALARS_MAP
     );
 
     autoBind(this);
+  }
+
+  public get importDefinition(): string {
+    if (!this.config.imports.length) {
+      return '';
+    }
+
+    const imports = this.config.imports.map(i => indent(`"${i}"`)).join('\n');
+    return `import (
+${imports}
+)\n`;
   }
 
   public get packageDefinition(): string {
@@ -60,9 +75,9 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
     const allScalars = Object.keys(this.config.scalars).map(scalarName => {
       const scalarValue = this.config.scalars[scalarName];
       const scalarType = this._schema.getType(scalarName);
-      const comment = scalarType && scalarType.astNode && scalarType.description ? transformComment(scalarType.description, 1) : '';
+      const comment = scalarType && scalarType.astNode && scalarType.description ? transformComment(scalarType.description, 1) + '\n' : '';
 
-      return `${comment}\ntype ${scalarName} ${scalarValue}`;
+      return comment + `type ${scalarName} ${scalarValue}`;
     });
 
     return allScalars.join('\n') + '\n\n';
@@ -126,27 +141,20 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
       .implements(interfaces)
       .withComment((node.description as any) as string);
 
-    const typeDefinition = declarationBlock.withBlock(allFields.join('\n')).string;
-
-    const argumentsBlock = this.buildArgumentsBlock(originalNode);
-
-    return [typeDefinition, argumentsBlock].filter(f => f).join('\n\n');
+    return declarationBlock.withBlock(allFields.join('\n')).string;
   }
 
   InterfaceTypeDefinition(node: InterfaceTypeDefinitionNode, key: number | string, parent: any): string {
     const optionalTypename = this.config.nonOptionalTypename ? '' : '*';
     // const allFields = [...(this.config.addTypename ? [indent(`__typename "${optionalTypename}${node.name}",`)] : []), ...node.fields];
     const allFields = node.fields;
-    const argumentsBlock = this.buildArgumentsBlock(parent[key] as InterfaceTypeDefinitionNode);
 
     let declarationBlock = new DeclarationBlock(this._declarationBlockConfig)
       .asKind('struct')
       .withName(this.convertName(node))
       .withComment((node.description as any) as string);
 
-    const interfaceDefinition = declarationBlock.withBlock(allFields.join('\n')).string;
-
-    return [interfaceDefinition, argumentsBlock].filter(f => f).join('\n\n');
+    return declarationBlock.withBlock(allFields.join('\n')).string;
   }
 
   ScalarTypeDefinition(node: ScalarTypeDefinitionNode): string {
@@ -179,27 +187,14 @@ export class GoVisitor<TRawConfig extends GoPluginConfig = GoPluginConfig, TPars
   }
 
   EnumTypeDefinition(node: EnumTypeDefinitionNode): string {
-    // const enumName = (node.name as any) as string;
-    //
-    // // In case of mapped external enum string
-    // if (this.config.enumValues[enumName] && typeof this.config.enumValues[enumName] === 'string') {
-    //   return null;
-    // }
-
-    // return new DeclarationBlock(this._declarationBlockConfig)
-    //   .asKind('enum')
-    //   .withName(this.convertName(node))
-    //   .withComment((node.description as any) as string)
-    //   .withBlock(this.buildEnumValuesBlock('enumName', node.values)).string;
     const name = this.convertName(node);
 
-    const values = node.values.map(i => indent(`${name}${toPascalCase(i.name.toString())} ${name} = "${i.name}"\n`)).join('');
+    const values = node.values.map(i => indent(`${name}${toPascalCase(i.name.toString())} ${name} = "${i.name}"`)).join('\n');
 
     return `type ${name} string
 const (
 ${values}
-)
-`;
+)\n`;
   }
 
   // We are using it in order to transform "description" field
@@ -225,27 +220,6 @@ ${values}
 
   DirectiveDefinition(node: DirectiveDefinitionNode): string {
     return '';
-  }
-
-  protected buildArgumentsBlock(node: InterfaceTypeDefinitionNode | ObjectTypeDefinitionNode) {
-    // const fieldsWithArguments = node.fields.filter(field => field.arguments && field.arguments.length > 0) || [];
-    // return fieldsWithArguments
-    //   .map(field => {
-    //     const name =
-    //       node.name.value +
-    //       this.convertName(field, {
-    //         useTypesPrefix: false,
-    //       }) +
-    //       'Args';
-    //
-    //     return new DeclarationBlock(this._declarationBlockConfig)
-    //       .asKind('struct')
-    //       .withName(this.convertName(name))
-    //       .withComment(node.description)
-    //       .withBlock(field.arguments.map(i => `${i.name.value} ${getBaseTypeNode(i)}`).join('\n')).string;
-    //   })
-    //   .join('\n\n');
-    return `// argument block ${node.name.value}\n\n`;
   }
 
   protected _getTypeForNode(node: NamedTypeNode): string {

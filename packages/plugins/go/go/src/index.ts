@@ -24,6 +24,43 @@ export interface GoPluginConfig extends RawConfig {
    * ```
    */
   package?: string;
+
+  /**
+   * @name imports
+   * @type string[]
+   * @description Add Go imports.
+   *
+   * @example
+   * ```yml
+   * generates:
+   *   graphql/gql_gen.go:
+   *     plugins:
+   *       - go
+   *     config:
+   *       imports:
+   *         - "time"
+   *         - "github.com/custom/package/path"
+   * ```
+   */
+  imports?: string[];
+
+  /**
+   * @name scalars
+   * @type object
+   * @description Configure custom scalar mapping.
+   *
+   * @example
+   * ```yml
+   * generates:
+   *   graphql/gql_gen.go:
+   *     plugins:
+   *       - go
+   *     config:
+   *       scalars:
+   *         time: Time
+   * ```
+   */
+  scalars?: { [key: string]: string };
 }
 
 export const plugin: PluginFunction<GoPluginConfig> = (schema: GraphQLSchema, documents: Types.DocumentFile[], config: GoPluginConfig, { outputFile }) => {
@@ -33,9 +70,10 @@ export const plugin: PluginFunction<GoPluginConfig> = (schema: GraphQLSchema, do
   const astNode = parse(printedSchema);
   const visitorResult = visit(astNode, { leave: visitor });
   const pkg = visitor.packageDefinition;
+  const imports = visitor.importDefinition;
   const scalars = visitor.scalarsDefinition;
 
   return {
-    content: [pkg, scalars, ...visitorResult.definitions].join('\n'),
+    content: [pkg, imports, scalars, ...visitorResult.definitions].join('\n'),
   };
 };
